@@ -1,3 +1,4 @@
 django
 netaddr
 psycopg2
+requests
