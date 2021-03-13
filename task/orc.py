@@ -44,13 +44,13 @@ class Orc:
 
     def create_vm(self, vm_name, username, password, ssh_port=22, vlan_id=None, userdata = []):
         vm = {
-            "name":vm_name,
-            "platform": 2,
-            "network": 2,
-            "vm_template": 2,
-            "memory": 2,
-            "cpu_cores": 1,
-            "os_disk": 16
+            "name": vm_name,
+            "platform": settings.ORC_PLATFORM,
+            "network": settings.ORC_NETWORK,
+            "vm_template": settings.ORC_VM_TEMPLATE,
+            "memory": settings.ORC_VM_MEMORY,
+            "cpu_cores": settings.ORC_VM_CORES,
+            "os_disk": settings.ORC_VM_DISK
         }
 
         userdata = [

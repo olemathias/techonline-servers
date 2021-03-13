@@ -132,12 +132,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = os.environ.get('STATIC_URL', '/static/')
+FORCE_SCRIPT_NAME = os.environ.get('FORCE_SCRIPT_NAME', None)
 
-# Tech Online custom
+# Tech Online Customs
 ORC_BASE_URL = os.environ.get('ORC_BASE_URL', 'http://localhost:8000/')
 ORC_USERNAME = os.environ.get('ORC_USERNAME', 'techo')
 ORC_PASSWORD = os.environ.get('ORC_PASSWORD', 'lokalt')
+
+ORC_PLATFORM = os.environ.get('ORC_PLATFORM', 2)
+ORC_NETWORK = os.environ.get('ORC_NETWORK', 2)
+ORC_VM_TEMPLATE = os.environ.get('ORC_VM_TEMPLATE', 2)
+ORC_VM_MEMORY = os.environ.get('ORC_VM_MEMORY', 4)
+ORC_VM_CORES = os.environ.get('ORC_VM_CORES', 2)
+ORC_VM_DISK = os.environ.get('ORC_VM_DISK', 16)
 
 VYOS_BASE_URL = os.environ.get('VYOS_BASE_URL', 'https://fra1.msbone.net:44302/')
 VYOS_TOKEN = os.environ.get('VYOS_TOKEN', 'LOL')
