@@ -36,7 +36,9 @@ class Orc:
             request = requests.delete(self.base_url+uri, headers=headers)
 
         if request.headers.get('content-type') == 'application/json':
+            print(request.json())
             return request.json()
+        print(request.text)
         return None
 
     def get_vm(self, id):
