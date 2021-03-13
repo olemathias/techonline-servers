@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><a href="/new">New entry</a> </h2>
+{% for entry in entries %}
+    <h3> <a href="/{{entry.id}}"> {{ entry.username }}<small> - {{ entry.orc_vm_fqdn }}</small> </a></h3>
+{% endfor %}
+{% endblock %}

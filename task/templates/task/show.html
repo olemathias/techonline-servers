@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>{{entry.orc_vm_fqdn}}</h3>
+<a href="/{{entry.id}}/delete"><i class="fas fa-trash-alt"></i> Delete</a> <br/><br/>
+<pre>ssh {{entry.orc_vm_username}}@{{entry.public_ipv4}} -p {{entry.allocations.first.port}}
+ssh {{entry.orc_vm_username}}@{{entry.public_ipv6}} -p {{entry.allocations.first.port}}</pre>
+<i> Password:</i> <pre>{{entry.orc_vm_password}}</pre>
+Vlan ID: {{entry.vlan.vlan_id}}
+<br/>
+
+Status: <b>
+{% if "proxmox" not in entry.vm.state %} Waiting <i class="fas fa-cog fa-spin"></i>
+{% elif entry.vm.state.proxmox.status == "provisioning" %} {{entry.vm.state.proxmox.status|title}} <i class="fas fa-spider fa-spin"></i>
+{% elif entry.vm.state.proxmox.status == "provisioned" %} {{entry.vm.state.proxmox.status|title}} <i class="fas fa-clipboard-check"></i>
+{% else %} {{entry.vm.state.proxmox.status|title}} <i class="fas fa-question-circle"></i> {% endif %} </b>
+
+<meta http-equiv="refresh" content="5">
+<table class="table">
+  <tbody>
+    {% for key, value in entry.status.status.items %}
+    <tr class="{% if value %}table-success{% else %}table-danger{% endif %}">
+      <th>{{ key|title }}</th>
+      <td>{{ value }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{{ entry_json }}
+
+{% endblock %}
