@@ -7,14 +7,14 @@ django.setup()
 
 # write your code here
 import time
-from task.models import Task, Status
+from task.models import Entry, Status
 
 import subprocess
 import re
 import requests
 
 def ping(ip):
-    args=['/sbin/ping', '-c', '3', '-W', '1', str(ip)]
+    args=['/bin/ping', '-c', '3', '-W', '1', str(ip)]
     p_ping = subprocess.Popen(args,
                               shell=False,
                               stdout=subprocess.PIPE)
@@ -42,11 +42,11 @@ def http_check(url):
 
 running = True
 while running:
-    for entry in Task.objects.all():
+    for entry in Entry.objects.all():
         stat = {}
-        stat.update({'ipv4_ping': ping(entry.public_ipv4)})
-        stat.update({'ipv6_ping': ping(entry.public_ipv6)})
-        stat.update({'http': http_check("http://{}".format(entry.public_ipv4))})
+        r = requests.get('http://10.10.150.7:8010/{}'.format(entry.vlan_id))
+        print(r.text)
+        stat.update({'dhcp': r.json()})
         print(stat)
-        Status.objects.filter(task_id=entry.id).update(status=stat)
-    time.sleep(5)
+        Status.objects.filter(entry_id=entry.id).update(status=stat)
+    time.sleep(120)

@@ -18,7 +18,7 @@ Status: <b>
 <table class="table">
   <tbody>
     {% for key, value in entry.status.status.items %}
-    <tr class="{% if value %}table-success{% else %}table-danger{% endif %}">
+    <tr class="{% if value.status == 'ok' %}table-success{% else %}table-danger{% endif %}">
       <th>{{ key|title }}</th>
       <td>{{ value }}</td>
     </tr>
