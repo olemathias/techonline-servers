@@ -1,7 +1,8 @@
 from django.shortcuts import render
-from task.models import Entry, Status, Allocation, Vlan
+from task.models import Entry, Status, Allocation
 from django.shortcuts import redirect, get_object_or_404
 from django.conf import settings
+from django.http import JsonResponse
 import string
 import random
 
@@ -23,11 +24,8 @@ def new_entry(request):
         username = data.get('username').lower()
         password = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(10))
         ssh_port = Allocation.get_next_port()
-        entry = Entry.objects.create(username=username, entry_type=data.get('task_type'))
-
-        vlan_id = Vlan.get_next_id()
-        vlan = Vlan(entry_id=entry.id, vlan_id=vlan_id)
-        vlan.save()
+        vlan_id = Entry.get_next_vlan_id()
+        entry = Entry.objects.create(username=username, entry_type=data.get('task_type'), vlan_id=vlan_id)
 
         orc = Orc()
         vm = orc.create_vm(vm_name, username, password, ssh_port, vlan_id)
@@ -81,3 +79,6 @@ def entry(request, entry_id):
     entry = get_object_or_404(Entry, pk=entry_id)
     serialized_obj = serializers.serialize('json', [ entry, ])
     return render(request, 'task/show.html', {'entry': entry, 'entry_json': serialized_obj})
+
+def api_entries(request, type):
+    return JsonResponse(list(Entry.objects.filter(entry_type=type).values()), safe=False)

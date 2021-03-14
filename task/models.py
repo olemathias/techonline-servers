@@ -16,17 +16,21 @@ class Entry(models.Model):
     orc_vm_fqdn = models.CharField(max_length=64, default=None, null=True)
     public_ipv4 = models.GenericIPAddressField(default=None, null=True)
     public_ipv6 = models.GenericIPAddressField(default=None, null=True)
+    vlan_id = models.PositiveIntegerField(default=None, null=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     orc_vm = None
 
+    @classmethod
+    def get_next_vlan_id(self):
+        vlans = Entry.objects.all().values_list('vlan_id', flat=True)
+        for i in list(range(1050, 1200)):
+            if i not in vlans:
+                return i
+
     @property
     def allocations(self):
         return Allocation.objects.filter(entry_id=self.id)
-
-    @property
-    def vlan(self):
-        return Vlan.objects.get(entry_id=self.id)
 
     @property
     def vm(self):
@@ -66,19 +70,6 @@ class Allocation(models.Model):
         ports = Allocation.objects.all().values_list('port', flat=True)
         for i in list(range(20001, 20200)):
             if i not in ports:
-                return i
-
-class Vlan(models.Model):
-    entry = models.ForeignKey(Entry, on_delete=models.CASCADE)
-    vlan_id = models.PositiveIntegerField(default=None, null=True)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    @classmethod
-    def get_next_id(self):
-        vlans = Vlan.objects.all().values_list('vlan_id', flat=True)
-        for i in list(range(1050, 1200)):
-            if i not in vlans:
                 return i
 
 class Status(models.Model):
