@@ -3,8 +3,7 @@ from task.models import Entry, Status, Allocation
 from django.shortcuts import redirect, get_object_or_404
 from django.conf import settings
 from django.http import JsonResponse
-import string
-import random
+from django.views.decorators.csrf import csrf_exempt
 
 import json
 from django.core import serializers
@@ -19,45 +18,9 @@ def index(request):
 def new_entry(request):
     if request.method == 'POST':
         data = request.POST
-
-        vm_name = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
-        username = data.get('username').lower()
-        password = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(10))
-        ssh_port = Allocation.get_next_port()
-        vlan_id = Entry.get_next_vlan_id()
-        entry = Entry.objects.create(username=username, entry_type=data.get('task_type'), vlan_id=vlan_id)
-
-        orc = Orc()
-        vm = orc.create_vm(vm_name, username, password, ssh_port, vlan_id)
-        entry.orc_vm_id = vm['id']
-        entry.orc_vm_username = username
-        entry.orc_vm_password = password
-        entry.orc_vm_fqdn = vm['fqdn']
-        entry.public_ipv4 = settings.PUBLIC_IPV4
-        entry.public_ipv6 = vm['config']['net']['ipv6']['ip']
-        entry.save()
-
-        vyos_rule_id = Allocation.get_next_vyos_rule_id()
-
-        allocation = Allocation(entry_id=entry.id, vyos_rule_id=vyos_rule_id, port=ssh_port, type="ssh")
-        allocation.save()
-
-        destination = {
-            "address": entry.public_ipv4,
-            "port": ssh_port
-        }
-
-        translation = {
-            "address": vm['config']['net']['ipv4']['ip'],
-            "port": ssh_port
-        }
-
-        allocation.vyos.create_nat_rule(vyos_rule_id, destination, translation, "Techo - VM: {}".format(vm['id']))
-
-        status = Status(entry_id=entry.id)
-        status.save()
-
+        entry = Entry.new(data.get('username').lower(), data.get('username').lower(), data.get('task_type'))
         return redirect("/{}".format(entry.id))
+
     return render(request, 'task/new.html', {'types': Entry.Type.choices})
 
 def delete_entry(request, entry_id):
@@ -80,5 +43,19 @@ def entry(request, entry_id):
     serialized_obj = serializers.serialize('json', [ entry, ])
     return render(request, 'task/show.html', {'entry': entry, 'entry_json': serialized_obj})
 
+@csrf_exempt
 def api_entries(request, type):
     return JsonResponse(list(Entry.objects.filter(entry_type=type).values()), safe=False)
+
+@csrf_exempt
+def api_entry(request, id):
+    if request.method == 'DELETE':
+        return JsonResponse({"deleted": id}) # TODO
+    return JsonResponse(list(Entry.objects.filter(id=id).values())[0], safe=False)
+
+@csrf_exempt
+def api_new_entry(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        entry = Entry.new(data.get('username').lower(), data.get('uid').lower(), data.get('task_type'))
+        return JsonResponse(list(Entry.objects.filter(id=entry.id).values())[0], safe=False)

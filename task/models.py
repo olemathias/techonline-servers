@@ -1,6 +1,10 @@
 from django.db import models
+from django.conf import settings
 from task.orc import Orc
 from task.vyos import Vyos
+
+import string
+import random
 
 EntryType = ["dhcp-dns"]
 
@@ -27,6 +31,53 @@ class Entry(models.Model):
         for i in list(range(1050, 1200)):
             if i not in vlans:
                 return i
+
+    @classmethod
+    def new(self, ssh_username, uid, entry_type):
+        vm_name = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        username = ssh_username.lower()
+        password = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(10))
+        ssh_port = Allocation.get_next_port()
+
+
+        entry = Entry.objects.create(username=uid, entry_type=entry_type)
+        entry.orc_vm_username = username
+        entry.orc_vm_password = password
+        entry.public_ipv4 = settings.PUBLIC_IPV4
+        entry.save()
+
+        ssh_vyos_rule_id = Allocation.get_next_vyos_rule_id()
+        ssh_allocation = Allocation(entry_id=entry.id, vyos_rule_id=ssh_vyos_rule_id, port=ssh_port, type="ssh")
+        ssh_allocation.save()
+
+        vlan_id = None
+
+        # DHCP DNS
+        if entry_type == 1:
+            vlan_id = Entry.get_next_vlan_id()
+            entry.vlan_id = vlan_id
+
+        orc = Orc()
+        vm = orc.create_vm(vm_name, username, password, ssh_port, vlan_id)
+        entry.orc_vm_id = vm['id']
+        entry.orc_vm_fqdn = vm['fqdn']
+        entry.public_ipv6 = vm['config']['net']['ipv6']['ip']
+        entry.save()
+
+        ssh_destination = {
+            "address": entry.public_ipv4,
+            "port": ssh_port
+        }
+        ssh_translation = {
+            "address": vm['config']['net']['ipv4']['ip'],
+            "port": ssh_port
+        }
+        ssh_allocation.vyos.create_nat_rule(ssh_vyos_rule_id, ssh_destination, ssh_translation, "Techo - VM: {}".format(vm['id']))
+
+        status = Status(entry_id=entry.id)
+        status.save()
+
+        return entry
 
     @property
     def allocations(self):
