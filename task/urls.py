@@ -9,5 +9,5 @@ urlpatterns = [
     path('new', views.new_entry, name='new_entry'),
     path('api/entries/<type>', views.api_entries, name='api_entries'),
     path('api/entry/new', views.api_new_entry, name='api_new_entry'),
-    path('api/entry/<id>', views.api_entry, name='api_entry'),
+    path('api/entry/<int:id>', views.api_entry, name='api_entry'),
 ]

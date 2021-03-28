@@ -151,3 +151,7 @@ VYOS_BASE_URL = os.environ.get('VYOS_BASE_URL', 'https://fra1.msbone.net:44302/'
 VYOS_TOKEN = os.environ.get('VYOS_TOKEN', 'LOL')
 
 PUBLIC_IPV4 = os.environ.get('PUBLIC_IPV4', '212.129.2.43')
+BASE_DOMAIN = os.environ.get('BASE_DOMAIN', 'techo.msbone.cloud')
+
+PDNS_API_URL = os.environ.get('PDNS_API_URL', 'http://10.10.144.2:8081/api/v1')
+PDNS_API_KEY = os.environ.get('PDNS_API_KEY', '<REMOVED>')

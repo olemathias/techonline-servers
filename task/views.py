@@ -25,17 +25,8 @@ def new_entry(request):
 
 def delete_entry(request, entry_id):
     entry = get_object_or_404(Entry, pk=entry_id)
-    orc = Orc()
-    orc.delete_vm(entry.orc_vm_id)
+    entry.cleanup()
 
-    vyos = Vyos()
-    allocations = Allocation.objects.filter(entry_id=entry_id)
-    print(allocations)
-    for a in allocations:
-        if vyos.delete_nat_rule(a.vyos_rule_id):
-            a.delete()
-
-    entry.delete()
     return redirect("/")
 
 def entry(request, entry_id):
@@ -49,13 +40,24 @@ def api_entries(request, type):
 
 @csrf_exempt
 def api_entry(request, id):
+    entry = get_object_or_404(Entry, pk=id)
     if request.method == 'DELETE':
-        return JsonResponse({"deleted": id}) # TODO
-    return JsonResponse(list(Entry.objects.filter(id=id).values())[0], safe=False)
+        entry.cleanup()
+        return JsonResponse({"deleted": id})
+    #return JsonResponse(list(Entry.objects.filter(id=entry.id).values())[0], safe=False)
+    dump = entry.dump()
+    if 'proxmox' in entry.vm["state"]:
+        dump.update({"status": entry.vm["state"]["proxmox"]["status"]})
+    else:
+        dump.update({"status": "new"})
+    return JsonResponse(dump)
 
 @csrf_exempt
 def api_new_entry(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        entry = Entry.new(data.get('username').lower(), data.get('uid').lower(), data.get('task_type'))
-        return JsonResponse(list(Entry.objects.filter(id=entry.id).values())[0], safe=False)
+        entry = Entry.new(data.get('username').lower(), data.get('uid').lower(), data.get('track_id', "1"))
+        #return JsonResponse(list(Entry.objects.filter(id=entry.id).values())[0], safe=False)
+        dump = entry.dump()
+        dump.update({"status": "new"})
+        return JsonResponse(dump)

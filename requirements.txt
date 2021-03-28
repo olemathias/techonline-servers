@@ -2,3 +2,4 @@ django
 netaddr
 psycopg2
 requests
+dnsdist_console

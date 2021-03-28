@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>{{entry.orc_vm_fqdn}}</h3>
+<h3>{{entry.fqdn|slice:":-1"}}</h3>
 <a href="/{{entry.id}}/delete"><i class="fas fa-trash-alt"></i> Delete</a> <br/><br/>
 <pre>ssh {{entry.orc_vm_username}}@{{entry.public_ipv4}} -p {{entry.allocations.first.port}}
 ssh {{entry.orc_vm_username}}@{{entry.public_ipv6}} -p {{entry.allocations.first.port}}</pre>
 <i> Password:</i> <pre>{{entry.orc_vm_password}}</pre>
 Vlan ID: {{entry.vlan_id}}
+<br/>
+Zone: {{entry.zone_fqdn}}
+<br/>
 <br/>
 
 Status: <b>

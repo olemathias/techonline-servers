@@ -36,9 +36,9 @@ class Orc:
             request = requests.delete(self.base_url+uri, headers=headers)
 
         if request.headers.get('content-type') == 'application/json':
-            print(request.json())
+            #print(request.json())
             return request.json()
-        print(request.text)
+        #print(request.text)
         return None
 
     def get_vm(self, id):
@@ -61,7 +61,8 @@ class Orc:
             "sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config",
             "sed -i 's/#Port 22/Port {}/' /etc/ssh/sshd_config".format(ssh_port),
             "echo '{} ALL=(ALL) NOPASSWD: ALL' | EDITOR='tee -a' visudo".format(username),
-            "systemctl restart sshd"
+            "systemctl restart sshd",
+            "curl https://gist.githubusercontent.com/olemathias/d6d850869a2f757cce25f631ac72d2e3/raw/techo21-motd.txt > /etc/motd"
         ] + userdata
 
         if vlan_id is not None:
@@ -72,7 +73,7 @@ class Orc:
             }})
 
             # This is bad
-            ip = "10.{}.{}.1/24".format(str(vlan_id)[:2], str(vlan_id)[-2:])
+            ip = "10.{}.{}.2/24".format(str(vlan_id)[:2], str(vlan_id)[-2:])
             userdata.append("touch /etc/network/interfaces.d/60-techonline")
             userdata.append("echo 'auto ens19' >> /etc/network/interfaces.d/60-techonline")
             userdata.append("echo 'iface ens19 inet static' >> /etc/network/interfaces.d/60-techonline")
