@@ -18,7 +18,7 @@ You will be provided an IP address, port, username and password to SSH to, this 
 
 Start by making sure that works.
 
-The server you are conneting to have 2 network interfaces: eth0 and ens19. eth0 is only used for management traffic and can mostly be ignored. ens19 is the interface that have a client ready for DHCP.
+The server you are conneting to have 2 interfaces: eth0 and ens19. eth0 is only used for management traffic and can mostly be ignored. ens19 is the interface that will have a client ready for DHCP.
 
 In a production setup you would generaly never do this, having a server interface in each subnet does not scale very well. For bigger networks, DHCP relay is often used. TODO write more  
 But for this small lab it's fine and a little simpler to setup and understand.
@@ -51,14 +51,15 @@ A few notes:
 - The log /var/log/syslog is generaly a good start when something is not working.
 
 Options you will need:
-- domain-name
-- domain-name-servers
+- domain-name (use the one provided)
+- domain-name-servers (this must be your own server, the ip at ens19)
 - default-lease-time
 - max-lease-time
 - authoritative
 - subnet
   - routers
-You are free to configure others if you would like.
+
+You are free to configure other options if you would like.
 
 ## 3.2 DNS
 First it can be usefull to know the dirrfrenct between a Recursor and Authoritative nameserver. All DNS servers fall into one of four categories: Recursive resolvers, root nameservers, TLD nameservers, and authoritative nameservers.
@@ -84,3 +85,4 @@ Bind9 can be installed using apt-get on Debian.
 - tcpdump
 - dhcp authoritative
 - recursor and authoritative on the same IP: why not.
+- Write about the DHCP Options (default-lease-time, max-lease-time)
