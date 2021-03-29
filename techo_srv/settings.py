@@ -155,3 +155,5 @@ BASE_DOMAIN = os.environ.get('BASE_DOMAIN', 'techo.msbone.cloud')
 
 PDNS_API_URL = os.environ.get('PDNS_API_URL', 'http://10.10.144.2:8081/api/v1')
 PDNS_API_KEY = os.environ.get('PDNS_API_KEY', '<REMOVED>')
+
+VMBRIDGE = os.environ.get('VMBRIDGE', 'vmbr1')

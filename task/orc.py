@@ -68,7 +68,7 @@ class Orc:
         if vlan_id is not None:
             vm.update({"additional_net": {
                 "firewall": 0,
-                "vmbridge": "vmbr1",
+                "vmbridge": settings.VMBRIDGE,
                 "vlan_id": vlan_id
             }})
 
