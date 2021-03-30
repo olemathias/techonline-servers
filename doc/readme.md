@@ -84,5 +84,6 @@ Bind9 can be installed using apt-get on Debian.
 - editor (nano guide)
 - tcpdump
 - dhcp authoritative
-- recursor and authoritative on the same IP: why not.
+- recursor and authoritative on the same IP/server: why not.
 - Write about the DHCP Options (default-lease-time, max-lease-time)
+- The diffrent DNS records (A, AAAA, CNAME, NS, SOA, MX, ++)
