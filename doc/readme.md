@@ -30,33 +30,34 @@ For this lab it's fine and simpler to configure and understand.
 ## 2.2 Pre-configured
 For convenience, the following is set up:
 1. The server is installed with Debian 10, the management network (eth0) is configued and listening on ssh.
-2. IP address for ens19 is already configured.
+2. IP address for ens19 is already configured (10.XX.XX.2).
 3. A local user is already configured. Username and password will be provided in our portal. You are free to add other users, change the password and/or add a ssh-key.
+4. Get the ip address for ens19 with `ifconfig ens19 | grep inet | grep netmask`
 
 
 ## 2.8 IP-plan
 All instances will automaticly be allocated an /24 IPv4 network for the task. See the `ens19` interface for what subnet you got. IPv6 is not needed for this task.
 
 IPv4: For management the server is placed in 10.129.1.0/24 and all traffic to and from the server is NAT'ed behind 185.80.182.120. Only SSH traffic on allocated port is allowed in.
-IPv6: You will get a public IPv6 address.
+IPv6: You will get a public IPv6 address.  
 Filtering: We do filtering on traffic to prevent abuse, let us know if you think this is stopping you from completing the task.
 
 # 2 Tips and tricks
 ## 3.1 DHCP
-There are many DHCP servers out there, the most known are probaly isc-dhcp-server and kea-dhcp-server. For this task we recommend isc-dhcp-server, but you can choose whatevery you like. The rest of the documentation will assume you are using isc-dhcp-server
+There are many DHCP servers out there, the most known are probably isc-dhcp-server. For this task we recommend isc-dhcp-server, but you can choose whatevery you like. The rest of the documentation will assume you are using isc-dhcp-server.  
 
 The server can be installed using apt-get on Debian.  
 `apt install isc-dhcp-server`
 
 A few notes:
-- The default setup from Debian have the same service for DHCPv4 and DHCPv6, since we are only going to use v4 in this lab, it can save you some headiche by disabling DHCPv6. Do that by commenting out INTERFACESv6 (add # to front of the line) in /etc/default/isc-dhcp-server # TODO check this
-- While you are in /etc/default/isc-dhcp-server add ens19 to INTERFACESv4. This tells the server to only listen to ens19. (the interface with clients)
-- The default configuration (/etc/dhcp/dhcpd.conf) have everything you need to complete the task, you will just need to put it together.
-- The log /var/log/syslog is generaly a good start when something is not working.
+- The default setup from Debian have the same service for DHCPv4 and DHCPv6, since we are only going to use IPv4 in this lab, it can save you some headache by disabling DHCPv6. Do that by commenting out `INTERFACESv6` (add # to front of the line) in `/etc/default/isc-dhcp-server`.
+- While you are in `/etc/default/isc-dhcp-server` add ens19 to `INTERFACESv4`. This tells the server to only listen to ens19.
+- The default configuration (/etc/dhcp/dhcpd.conf) have everything you need to complete the task, you will just need to put it together. Read the examples
+- The log /var/log/syslog is a good start when something is not working.
 
 Options you will need:
 - domain-name (use the one provided)
-- domain-name-servers (this must be your own server, the ip at ens19)
+- domain-name-servers (this must be the server, the ip at ens19)
 - default-lease-time
 - max-lease-time
 - authoritative
@@ -92,6 +93,7 @@ Bind9 can be installed using apt-get on Debian.
 - To show the current status of bind: `systemctl status bind9`
 - After making changes to the config you will need to restart bind9
 - You can validate the config with `named-checkconf /etc/bind/named.conf`
+- The log /var/log/syslog is a good start when something is not working.
 
 ### ACL
 The ACL should be placed outside of `options {`  
@@ -111,7 +113,7 @@ allow-recursion { my_net; };
 # TODO notes
 - editor (nano guide)
 - tcpdump
-- dhcp authoritative
+- dhcp authoritative option
 - recursor and authoritative on the same IP/server: why not.
 - Write about the DHCP Options (default-lease-time, max-lease-time)
 - The diffrent DNS records (A, AAAA, CNAME, NS, SOA, MX, ++)
