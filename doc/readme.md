@@ -85,15 +85,17 @@ For this task we recommend BIND9, but you can choose whatevery you like. The res
 Bind9 can be installed using apt-get on Debian.  
 `apt install bind9`
 
-## 3.4 Recursive resolver
+## 3.4 Bind
 - The config files for bind can be found in /etc/bind/
-- The file named.conf.options is a good start
-- Create a ACL for the client subnet
-- Enable recursion
 - To show the current status of bind: `systemctl status bind9`
 - After making changes to the config you will need to restart bind9
 - You can validate the config with `named-checkconf /etc/bind/named.conf`
 - The log /var/log/syslog is a good start when something is not working.
+
+## 3.5 Recursive resolver
+- The file named.conf.options is a good start
+- Create a ACL for the client subnet
+- Enable recursion
 
 ### ACL
 The ACL should be placed outside of `options {`  
@@ -110,6 +112,47 @@ recursion yes;
 allow-recursion { my_net; };
 ```
 
+## 3.6 Authoritative Nameserver
+- Create a zone file for the assigned zone
+- The file /etc/bind/named.conf.local is a good start
+
+### zone-XXX.techo.no
+In `/etc/bind/named.conf.local` add
+```
+zone "zone-XXX.techo.no" {
+    type master;
+    file "/etc/bind/zones/zone-XXX.techo.no"; # zone file path
+};
+```  
+
+Create a folder to place zone files:  
+```
+mkdir /etc/bind/zones
+```
+
+Example zone - Update to your need:  
+```
+$TTL    604800
+@       IN      SOA     ns1.zone-XXX.techo.no. you.zone-XXX.techo.no. (
+         2021040101     ; Serial
+             604800     ; Refresh
+              86400     ; Retry
+            2419200     ; Expire
+             604800 )   ; Negative Cache TTL
+;
+; name servers - NS records
+     IN      NS      ns1.zone-XXX.techo.no.
+
+; name servers - A records
+ns1.zone-XXX.techo.no.          IN      A       10.128.10.2 ;
+```
+ns1.zone-XXX.techo.no. is your nameserver, so the server you are working on.
+
+## 3.7 Extra tasks (optinal)
+1. Try to create a reverse zone for the assigned subnet. (in-addr.arpa)
+2. Make DHCP automaticly create DNS records for it's clients. (Dynamic DNS)
+3. Feel free to create more zones.
+
 # TODO notes
 - editor (nano guide)
 - tcpdump
@@ -118,4 +161,7 @@ allow-recursion { my_net; };
 - Write about the DHCP Options (default-lease-time, max-lease-time)
 - The diffrent DNS records (A, AAAA, CNAME, NS, SOA, MX, ++)
 - @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
-- Dynamic dns from dhcp - Optional
+- dig (bind9utils)
+- sudo
+
+https://www.digitalocean.com/community/tutorials/how-to-configure-bind-as-a-private-network-dns-server-on-ubuntu-14-04
