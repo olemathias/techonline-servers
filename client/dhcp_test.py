@@ -29,106 +29,112 @@ def get_dhcp(interface, entry):
 # Test tests
 
 # 1.  DHCP - Received
-def check_dhcp_received(dhcp_info, entry):
+def check_dhcp_received(dhcp_info, entry, skip=False):
     status = False
-    if dhcp_info is not False and "ip" in dhcp_info:
-        status = True
+    if skip is False:
+        if dhcp_info is not False and "ip" in dhcp_info:
+            status = True
 
     return {
-        "task_shortname": "dhcp_received",
+        "task_shortname": "dhcp",
         "shortname": "dhcp_received",
         "name": "DHCP Message Received",
         "description": "Check if DHCP message is received",
         "sequence": 1,
         "status_success": status,
-        "status_description": "We got a message!" if status else "Timeout..."
+        "status_description": "We got a message!" if status else "Skipped" if skip else "Timeout..."
      }
 
 # 2.  DHCP - Correct subnet mask
-def check_dhcp_subnet_mask(dhcp_info, entry):
+def check_dhcp_subnet_mask(dhcp_info, entry, skip=False):
     status = False
-    if "SubnetMask" in dhcp_info["options"] and dhcp_info["options"]["SubnetMask"]["value"] == "255.255.255.0":
-        status = True
+    if skip is False:
+        if "SubnetMask" in dhcp_info["options"] and dhcp_info["options"]["SubnetMask"]["value"] == "255.255.255.0":
+            status = True
 
     return {
-        "task_shortname": "dhcp_subnet_mask",
+        "task_shortname": "dhcp",
         "shortname": "dhcp_subnet_mask",
         "name": "DHCP Subnet Mask",
         "description": "Check received subnet mask is a /24",
         "sequence": 2,
         "status_success": status,
-        "status_description": "LGTM!" if status else "Got {}, excepted {}".format(dhcp_info["options"]["SubnetMask"]["value"], "255.255.255.0")
+        "status_description": "LGTM!" if status else "Skipped - No DHCP message" if skip else "Got {}, excepted {}".format(dhcp_info["options"]["SubnetMask"]["value"], "255.255.255.0")
      }
 
 # 3.  DHCP - Correct subnet
-def check_dhcp_subnet(dhcp_info, entry):
+def check_dhcp_subnet(dhcp_info, entry, skip=False):
     status = False
-    subnet = IPNetwork(entry["vlan_ip"])
-    ip = IPNetwork(dhcp_info["ip"]+"/24")
-    if subnet == ip:
-        status = True
+    if skip is False:
+        subnet = IPNetwork(entry["vlan_ip"])
+        ip = IPNetwork(dhcp_info["ip"]+"/24")
+        if subnet == ip:
+            status = True
     return {
-        "task_shortname": "dhcp_subnet",
+        "task_shortname": "dhcp",
         "shortname": "dhcp_subnet",
         "name": "DHCP Subnet",
         "description": "Check if assigned IP is in correct subnet",
         "sequence": 3,
         "status_success": status,
-        "status_description": "LGTM!" if status else "Got {}, excepted {}".format(str(ip), str(subnet))
+        "status_description": "LGTM!" if status else "Skipped - No DHCP message" if skip else "Got {}, excepted {}".format(str(ip), str(subnet))
      }
 
 # 4.  DHCP - Correct gateway
-def check_dhcp_gateway(dhcp_info, entry):
+def check_dhcp_gateway(dhcp_info, entry, skip=False):
     status = False
-    status_description = "Missing Router option?"
-    if "Router" in dhcp_info["options"] and len(dhcp_info["options"]["Router"]["value"]) >= 1:
-        subnet = IPNetwork(dhcp_info["ip"]+"/24")
-        gateway = str(subnet[1])
-        if gateway == dhcp_info["options"]["Router"]["value"][0]:
-            status = True
-        status_description = "LGTM!" if status else "Got {}, excepted {}".format(str(dhcp_info["options"]["Router"]["value"][0]), str(gateway))
+    if skip is False:
+        status_description = "Missing Router option?"
+        if "Router" in dhcp_info["options"] and len(dhcp_info["options"]["Router"]["value"]) >= 1:
+            subnet = IPNetwork(dhcp_info["ip"]+"/24")
+            gateway = str(subnet[1])
+            if gateway == dhcp_info["options"]["Router"]["value"][0]:
+                status = True
+            status_description = "LGTM!" if status else "Got {}, excepted {}".format(str(dhcp_info["options"]["Router"]["value"][0]), str(gateway))
     return {
-        "task_shortname": "dhcp_gateway",
+        "task_shortname": "dhcp",
         "shortname": "dhcp_gateway",
         "name": "DHCP Router",
         "description": "Check if assigned Router is in correct subnet",
         "sequence": 4,
         "status_success": status,
-        "status_description": status_description
+        "status_description": status_description if skip is False else "Skipped - No DHCP message"
      }
 
 # 5.  DHCP - DNS Servers provided
-def check_dhcp_dns(dhcp_info, entry):
+def check_dhcp_dns(dhcp_info, entry, skip=False):
     status = False
-    status_description = "Missing DNSServer?"
-    if "DNSServer" in dhcp_info["options"] and len(dhcp_info["options"]["DNSServer"]["value"]) >= 1:
-        if dhcp_info["options"]["DNSServer"]["value"][0] == str(IPNetwork(entry["vlan_ip"]).ip):
-            status = True
-        status_description = "LGTM!" if status else "Got {}, excepted {}".format(str(dhcp_info["options"]["DNSServer"]["value"][0]), str(IPNetwork(entry["vlan_ip"]).ip))
+    if skip is False:
+        status_description = "Missing DNSServer?"
+        if "DNSServer" in dhcp_info["options"] and len(dhcp_info["options"]["DNSServer"]["value"]) >= 1:
+            if dhcp_info["options"]["DNSServer"]["value"][0] == str(IPNetwork(entry["vlan_ip"]).ip):
+                status = True
+            status_description = "LGTM!" if status else "Got {}, excepted {}".format(str(dhcp_info["options"]["DNSServer"]["value"][0]), str(IPNetwork(entry["vlan_ip"]).ip))
     return {
-        "task_shortname": "dhcp_dns",
+        "task_shortname": "dhcp",
         "shortname": "dhcp_dns",
         "name": "DHCP DNS Option",
         "description": "Check if we received a DNSServer option",
         "sequence": 5,
         "status_success": status,
-        "status_description": status_description
+        "status_description": status_description if skip is False else "Skipped - No DHCP message"
      }
 
 # 6.  DHCP - DomainName provided
-def check_dhcp_domain_name(dhcp_info, entry):
+def check_dhcp_domain_name(dhcp_info, entry, skip=False):
     status = False
-    if "DomainName" in dhcp_info["options"]:
-        status_description = "Missing DomainName option?"
-        if dhcp_info["options"]["DomainName"]['value'] == entry["zone"]:
-            status = True
-        status_description = "LGTM!" if status else "Got {}, excepted {}".format(str(dhcp_info["options"]["DomainName"]['value']), str(entry["zone"]))
+    if skip is False:
+        if "DomainName" in dhcp_info["options"]:
+            status_description = "Missing DomainName option?"
+            if dhcp_info["options"]["DomainName"]['value'] == entry["zone"]:
+                status = True
+            status_description = "LGTM!" if status else "Skipped" if skip else "Got {}, excepted {}".format(str(dhcp_info["options"]["DomainName"]['value']), str(entry["zone"]))
     return {
-        "task_shortname": "dhcp_domain_name",
+        "task_shortname": "dhcp",
         "shortname": "dhcp_domain_name",
         "name": "DHCP DomainName Option",
         "description": "Check if we received a DomainName option",
         "sequence": 6,
         "status_success": status,
-        "status_description": status_description
+        "status_description": status_description if skip is False else "Skipped - No DHCP message"
      }

@@ -8,8 +8,6 @@ from dnsdist_console import Console
 import string
 import random
 
-EntryType = ["dhcp-dns"]
-
 class Entry(models.Model):
     class Type(models.IntegerChoices):
         DHCP_DNS = 1
@@ -51,7 +49,7 @@ class Entry(models.Model):
             "fqdn": self.fqdn[:-1],
             "zone": self.zone_fqdn[:-1],
             "vlan_id": self.vlan_id,
-            "vlan_ip": "10.{}.{}.2/24".format(str(self.vlan_id)[:2], str(self.vlan_id)[-2:]),
+            "vlan_ip": "10.{}.{}.0/24".format(str(self.vlan_id)[:2], str(self.vlan_id)[-2:]),
             "created_at": self.created,
             "updated_at": self.updated
         }

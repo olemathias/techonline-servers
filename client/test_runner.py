@@ -15,6 +15,20 @@ import json
 from dhcp_test import *
 from dns_test import *
 
+f=open("./backend.txt","r")
+lines=f.readlines()
+backend_url=lines[0].rstrip("\n")
+backend_username=lines[1].rstrip("\n")
+backend_password=lines[2].rstrip("\n")
+f.close()
+
+f=open("./techonline-servers.txt","r")
+lines=f.readlines()
+tos_url=lines[0].rstrip("\n")
+tos_username=lines[1].rstrip("\n")
+tos_password=lines[2].rstrip("\n")
+f.close()
+
 ndb = NDB(log='on')
 
 def setup_interface(interface_name, vlan_id):
@@ -36,13 +50,15 @@ def make_full_test(msg, entry):
     msg.update({"track": "server", "station_shortname": str(entry["id"])})
     return msg
 
+stations = requests.get('{}/api/stations/?track=server'.format(backend_url), auth=(backend_username, backend_password)).json()
 
-r = requests.get('http://10.10.150.5:9090/api/entries/1', auth=('tgo', 'tech21'))
-entries = r.json()
+for station in stations:
+    if station["status"] in ["terminated"]:
+        continue
 
-for e in entries:
+    print(station["name"])
 
-    r = requests.get('http://10.10.150.5:9090/api/entry/{}'.format(e['id']), auth=('tgo', 'tech21'))
+    r = requests.get('{}/api/entry/{}'.format(tos_url, int(station['shortname'])), auth=(tos_username, tos_password))
     entry = r.json()
 
     # Loop here fetch entries from api
@@ -58,16 +74,20 @@ for e in entries:
     try:
         status.append(make_full_test(check_dhcp_received(dhcp_info, entry), entry))
 
-        if check_dhcp_received(dhcp_info, entry)['status_success'] is True:
-            status.append(make_full_test(check_dhcp_subnet_mask(dhcp_info, entry), entry))
-            status.append(make_full_test(check_dhcp_subnet(dhcp_info, entry),entry))
-            status.append(make_full_test(check_dhcp_gateway(dhcp_info, entry),entry))
-            status.append(make_full_test(check_dhcp_dns(dhcp_info, entry),entry))
-            status.append(make_full_test(check_dhcp_domain_name(dhcp_info, entry),entry))
+        skip = check_dhcp_received(dhcp_info, entry)['status_success'] is False
+        status.append(make_full_test(check_dhcp_subnet_mask(dhcp_info, entry, skip), entry))
+        status.append(make_full_test(check_dhcp_subnet(dhcp_info, entry, skip),entry))
+        status.append(make_full_test(check_dhcp_gateway(dhcp_info, entry, skip),entry))
+        status.append(make_full_test(check_dhcp_dns(dhcp_info, entry, skip),entry))
+        status.append(make_full_test(check_dhcp_domain_name(dhcp_info, entry, skip),entry))
 
-            if check_dhcp_dns(dhcp_info, entry)['status_success'] is True:
-                server = dhcp_info["options"]["DNSServer"]["value"][0]
-                status.append(make_full_test(check_dns_rec(server, entry),entry))
+        skip = check_dhcp_dns(dhcp_info, entry, skip)['status_success'] is False
+        server = ""
+        if skip is False:
+            server = dhcp_info["options"]["DNSServer"]["value"][0]
+
+        status.append(make_full_test(check_dns_rec(server, entry, skip),entry))
+        status.append(make_full_test(check_dns_auth_soa(server, entry, skip),entry))
 
     except Exception as e:
         print(e)
@@ -75,4 +95,11 @@ for e in entries:
 
     cleanup_interface(interface)
 
+    for x in status:
+        r = requests.post('{}/api/test/'.format(backend_url), auth=(backend_username, backend_password), json=x)
+        if r.status_code != 201:
+            print("Failed to push status, got {}".format(r.status_code))
+
     print(json.dumps(status, indent=4, sort_keys=True))
+
+ndb.close()
