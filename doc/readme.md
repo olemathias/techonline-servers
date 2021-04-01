@@ -13,16 +13,17 @@ This is what being checked for:
 5.  DNS - Authoritative zone avaliable outside.
 
 ## 1.3 Environment
-You need an SSH client, if you are on windows "PuTTy" is recommended.
+You need an SSH client, if you are on windows "PuTTy" is fine.
 
-You will be provided an IP address, port, username and password to SSH to, this is where you will work.
-
+You will be provided an IP address, port, username and password to SSH to, this is where you will work.  
 Start by making sure that works.
 
 The server you are conneting to have 2 interfaces: eth0 and ens19. eth0 is only used for management traffic and can mostly be ignored. ens19 is the interface that will have a client ready for DHCP.
 
-In a production setup you would generaly never do this, needing to have a dhcp server interface in each subnet does not scale very well. For bigger networks, DHCP relay is almost always used
+In a production setup you would generaly never do this, needing to have a dhcp server interface in each subnet does not scale very well. For bigger networks, DHCP relay is almost always used.
 For this lab it's fine and simpler to configure and understand.
+
+The DNS zone is only avaliable from the server you are working on and is not reachable from internet.
 
 # 2 Reference documentation
 ## 2.1 Topology
@@ -33,7 +34,6 @@ For convenience, the following is set up:
 2. IP address for ens19 is already configured (10.XX.XX.2).
 3. A local user is already configured. Username and password will be provided in our portal. You are free to add other users, change the password and/or add a ssh-key. Use sudo for root access.
 4. Get the ip address for ens19 with `ifconfig ens19 | grep inet | grep netmask`
-
 
 ## 2.8 IP-plan
 All instances will automaticly be allocated an /24 IPv4 network for the task. See the `ens19` interface for what subnet you got. IPv6 is not needed for this task.  
@@ -54,18 +54,18 @@ A few notes:
 - While you are in `/etc/default/isc-dhcp-server` add ens19 to `INTERFACESv4`. This tells the server to only listen to ens19.
 - The default configuration (/etc/dhcp/dhcpd.conf) have everything you need to complete the task, you will just need to put it together. Read the examples.
 - Test the config with `dhcpd -t -cf /etc/dhcp/dhcpd.conf`
-- `journalctl -b -t dhcpd -t isc-dhcp-server` is a good start when something is not working.
+- `journalctl -b -t dhcpd -t isc-dhcp-server` or `tail -f /var/log/syslog` is a good start when something is not working.
 
 Options you will need:
 - domain-name (use the one provided)
 - domain-name-servers (this must be the server, the ip at ens19)
-- default-lease-time
-- max-lease-time
-- authoritative
-- subnet
+- default-lease-time (3600 is fine here)
+- max-lease-time (7200 is fine here)
+- authoritative (The authoritative clause means that if your DHCP server is the only one on your network)
+- subnet (Subnet assigned to ens19)
   - routers (use the first ip in the network (.1) )
 
-You are free to configure other options if you would like.
+You are free to configure other options.
 
 ## 3.2 DNS
 First it can be useful to know the difference between a Recursor and Authoritative nameserver.  
@@ -94,7 +94,7 @@ As with DHCP, there are multiple options avaliable. The most popular in the latt
 For this task we recommend BIND9, but you can choose whatevery you like. The rest of the documentation will assume you are using bind. Note that we will run the recursor and authoritative on the same IP. This can be an issue with PowerDNS.
 
 Bind9 can be installed using apt-get on Debian.  
-`apt install bind9`
+`apt install bind9 bind9utils`
 
 ## 3.4 Bind
 - The config files for bind can be found in `/etc/bind/`
@@ -103,15 +103,29 @@ Bind9 can be installed using apt-get on Debian.
 - You can validate the config with `named-checkconf /etc/bind/named.conf`
 - The log /var/log/syslog is a good start when something is not working.
 
+### dig
+`dig` is a command you can use to test lookups. A few examples follow:
+```
+# Get the A record for gathering.org
+$ dig A gathering.org @127.0.0.1 +short
+185.80.182.112
+
+# Get the SOA record for gathering.org
+$ dig SOA gathering.org @127.0.0.1 +short
+ns1.gathering.systems. drift.gathering.org. 2021033101 10800 3600 604800 300
+```
+Remove `+short` to get more information about the request.
+
 ## 3.5 Recursive resolver
 - The file named.conf.options is a good start
-- Create a ACL for the client subnet
-- Enable recursion
+- Enable recursion.
+- Should only be avaliable from local subnet (ens19). Create a ACL.
 
 ### ACL
 The ACL should be placed before `options {`  
 ```
 acl my_net {
+    127.0.0.1/32;
     10.0.0.0/24;
 };
 ```
@@ -123,9 +137,15 @@ recursion yes;
 allow-recursion { my_net; };
 ```
 
+### DNS Amplification
+A misconfigured Recursive Resolver can be used in a DDOS attack, it's therefore important to not allow requests from outside controlled networks.  
+In the example above we use an ACL to restrict access.  
+You can read more about this here: https://www.cloudflare.com/learning/ddos/dns-amplification-ddos-attack/
+
 ## 3.6 Authoritative Nameserver
 - Create a zone file for the assigned zone
 - The file /etc/bind/named.conf.local is a good start
+- Must from outside (eth0) and inside (ens19)
 
 ### zone-XXX.techo.no
 In `/etc/bind/named.conf.local` add
@@ -136,15 +156,11 @@ zone "zone-XXX.techo.no" {
 };
 ```  
 
-Create a folder to place zone files:  
-```
-mkdir /etc/bind/zones
-```
-
 Example zone - Update to your need:  
+`/etc/bind/zones/zone-XXX.techo.no`  
 ```
 $TTL    300
-@       IN      SOA     ns1.zone-XXX.techo.no. you.zone-XXX.techo.no. (
+@       IN      SOA     ns1.zone-XXX.techo.no. you.techo.no. (
                   1     ; Serial
              604800     ; Refresh
               86400     ; Retry
@@ -158,21 +174,12 @@ $TTL    300
 ns1.zone-XXX.techo.no.          IN      A       10.128.10.2 ; Your server
 ```  
 - ns1.zone-XXX.techo.no. is the nameserver, so the server you are working on.
-- `1 ; Serial` is the zone serial and is used to detect if the zone is changed. Increment this number by one when changes are done.
-
+- `1 ; Serial` is the zone serial and is used to detect if the zone is changed. Increment this by one when changes are done.
 
 ## 3.7 Extra tasks (optional)
-1. Try to create a reverse zone for the assigned subnet. (in-addr.arpa)
+Are all the tests green and you want more? We have a few extra tasks you can try, sadly no automated tests or other hints here. Use `dig` or other tools to verify.  
+1. Create a reverse zone for the assigned subnet. (in-addr.arpa)
 2. Make DHCP automaticly create DNS records for it's clients. (Dynamic DNS)
-3. Feel free to create more zones.
-4. Use tcpdump to see the traffic from the client
-
-# TODO notes
-- dhcp authoritative option
-- Write about the DHCP Options (default-lease-time, max-lease-time)
-- The diffrent DNS records (A, AAAA, CNAME, NS, SOA, MX, ++)
-- @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
-- dig (bind9utils)
-- sudo
-
-https://www.digitalocean.com/community/tutorials/how-to-configure-bind-as-a-private-network-dns-server-on-ubuntu-14-04
+3. Use tcpdump to see the traffic from the client.
+4. Create more zones? Can you add more records?
+Did you complete any of the extra tasks? Let us know in Discord!
