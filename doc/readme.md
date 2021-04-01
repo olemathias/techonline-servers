@@ -27,6 +27,7 @@ The DNS zone is only avaliable from the server you are working on and is not rea
 
 # 2 Reference documentation
 ## 2.1 Topology
+![Topology](https://github.com/[olemathias]/techonline-servers/blob/main/doc/techo-servertrack.png?raw=true)
 
 ## 2.2 Pre-configured
 For convenience, the following is set up:
