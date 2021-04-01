@@ -8,9 +8,9 @@ Your job is to configure the DHCP and DNS server.
 This is what being checked for:
 1.  DHCP - Lease Received and valid.
 2.  DNS - Respond to recursion request.
-3.  DNS - Recursion not avaliable outside of own subnet.
+3.  DNS - recursion not available outside of own subnet.
 4.  DNS - Authoritative zone valid.
-5.  DNS - Authoritative zone avaliable outside.
+5.  DNS - Authoritative zone available outside.
 
 ## 1.3 Environment
 You need an SSH client, if you are on windows "PuTTy" is fine.
@@ -18,12 +18,12 @@ You need an SSH client, if you are on windows "PuTTy" is fine.
 You will be provided an IP address, port, username and password to SSH to, this is where you will work.  
 Start by making sure that works.
 
-The server you are conneting to have 2 interfaces: eth0 and ens19. eth0 is only used for management traffic and can mostly be ignored. ens19 is the interface that will have a client ready for DHCP.
+The server you are connecting to have 2 interfaces: eth0 and ens19. eth0 is only used for management traffic and can mostly be ignored. ens19 is the interface that will have a client ready for DHCP.
 
-In a production setup you would generaly never do this, needing to have a dhcp server interface in each subnet does not scale very well. For bigger networks, DHCP relay is almost always used.
+In a production setup you would generally never do this, needing to have a dhcp server interface in each subnet does not scale very well. For bigger networks, DHCP relay is almost always used.
 For this lab it's fine and simpler to configure and understand.
 
-The DNS zone is only avaliable from the server you are working on and is not reachable from internet.
+The DNS zone is only available from the server you are working on and is not reachable from internet.
 
 # 2 Reference documentation
 ## 2.1 Topology
@@ -31,13 +31,13 @@ The DNS zone is only avaliable from the server you are working on and is not rea
 
 ## 2.2 Pre-configured
 For convenience, the following is set up:
-1. The server is installed with Debian 10, the management network (eth0) is configued and listening on ssh.
+1. The server is installed with Debian 10, the management network (eth0) is configured and listening on ssh.
 2. IP address for ens19 is already configured (10.XX.XX.2).
 3. A local user is already configured. Username and password will be provided in our portal. You are free to add other users, change the password and/or add a ssh-key. Use sudo for root access.
 4. Get the ip address for ens19 with `ifconfig ens19 | grep inet | grep netmask`
 
 ## 2.8 IP-plan
-All instances will automaticly be allocated an /24 IPv4 network for the task. See the `ens19` interface for what subnet you got. IPv6 is not needed for this task.  
+All instances will automatically be allocated an /24 IPv4 network for the task. See the `ens19` interface for what subnet you got. IPv6 is not needed for this task.  
 
 IPv4: For management the server is placed in 10.129.1.0/24 and all traffic to and from the server is NAT'ed behind 185.80.182.120. Only SSH traffic on allocated port is allowed in.
 IPv6: You will get a public IPv6 address.  
@@ -48,7 +48,9 @@ Filtering: We do filtering on traffic to prevent abuse, let us know if you think
 There are many DHCP servers out there, the most known are probably isc-dhcp-server. For this task we recommend isc-dhcp-server, but you can choose whatevery you like. The rest of the documentation will assume you are using isc-dhcp-server.  
 
 The server can be installed using apt-get on Debian. It's normal for startup to fail after installation.
-`apt install isc-dhcp-server`
+```
+apt install isc-dhcp-server
+```
 
 A few notes:
 - The default setup from Debian have the same service for DHCPv4 and DHCPv6, since we are only going to use IPv4 in this lab, it can save you some headache by disabling DHCPv6. Do that by commenting out `INTERFACESv6` (add # to front of the line) in `/etc/default/isc-dhcp-server`.
@@ -90,12 +92,14 @@ See more at https://www.cloudflare.com/learning/dns/dns-server-types/
 See more at https://www.cloudflare.com/learning/dns/dns-records/
 
 ## 3.3 DNS software
-As with DHCP, there are multiple options avaliable. The most popular in the latter decades is BIND.
+As with DHCP, there are multiple options available. The most popular in the latter decades is BIND.
 
-For this task we recommend BIND9, but you can choose whatevery you like. The rest of the documentation will assume you are using bind. Note that we will run the recursor and authoritative on the same IP. This can be an issue with PowerDNS.
+For this task we recommend BIND9, but you can choose whatever you like. The rest of the documentation will assume you are using bind. Note that we will run the recursor and authoritative on the same IP. This can be an issue with PowerDNS.
 
 Bind9 can be installed using apt-get on Debian.  
-`apt install bind9 bind9utils`
+```
+apt install bind9 bind9utils
+```
 
 ## 3.4 Bind
 - The config files for bind can be found in `/etc/bind/`
@@ -120,7 +124,7 @@ Remove `+short` to get more information about the request.
 ## 3.5 Recursive resolver
 - The file named.conf.options is a good start
 - Enable recursion.
-- Should only be avaliable from local subnet (ens19). Create a ACL.
+- Should only be available from local subnet (ens19). Create a ACL.
 
 ### ACL
 The ACL should be placed before `options {`  
@@ -180,7 +184,7 @@ ns1.zone-XXX.techo.no.          IN      A       10.128.10.2 ; Your server
 ## 3.7 Extra tasks (optional)
 Are all the tests green and you want more? We have a few extra tasks you can try, sadly no automated tests or other hints here. Use `dig` or other tools to verify.  
 1. Create a reverse zone for the assigned subnet. (in-addr.arpa)
-2. Make DHCP automaticly create DNS records for it's clients. (Dynamic DNS)
+2. Make DHCP automatically create DNS records for it's clients. (Dynamic DNS)
 3. Use tcpdump to see the traffic from the client.
-4. Create more zones? Can you add more records?
+4. Create more zones? Can you add more records?  
 Did you complete any of the extra tasks? Let us know in Discord!
