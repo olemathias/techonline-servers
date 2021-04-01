@@ -31,7 +31,7 @@ For this lab it's fine and simpler to configure and understand.
 For convenience, the following is set up:
 1. The server is installed with Debian 10, the management network (eth0) is configued and listening on ssh.
 2. IP address for ens19 is already configured (10.XX.XX.2).
-3. A local user is already configured. Username and password will be provided in our portal. You are free to add other users, change the password and/or add a ssh-key.
+3. A local user is already configured. Username and password will be provided in our portal. You are free to add other users, change the password and/or add a ssh-key. Use sudo for root access.
 4. Get the ip address for ens19 with `ifconfig ens19 | grep inet | grep netmask`
 
 
@@ -40,7 +40,7 @@ All instances will automaticly be allocated an /24 IPv4 network for the task. Se
 
 IPv4: For management the server is placed in 10.129.1.0/24 and all traffic to and from the server is NAT'ed behind 185.80.182.120. Only SSH traffic on allocated port is allowed in.
 IPv6: You will get a public IPv6 address.  
-Filtering: We do filtering on traffic to prevent abuse, let us know if you think this is stopping you from completing the task.
+Filtering: We do filtering on traffic to prevent abuse, let us know if you think this is stopping you from completing the tasks.
 
 # 2 Tips and tricks
 ## 3.1 DHCP
@@ -132,9 +132,9 @@ mkdir /etc/bind/zones
 
 Example zone - Update to your need:  
 ```
-$TTL    604800
+$TTL    300
 @       IN      SOA     ns1.zone-XXX.techo.no. you.zone-XXX.techo.no. (
-         2021040101     ; Serial
+                  1     ; Serial
              604800     ; Refresh
               86400     ; Retry
             2419200     ; Expire
@@ -144,17 +144,18 @@ $TTL    604800
      IN      NS      ns1.zone-XXX.techo.no.
 
 ; name servers - A records
-ns1.zone-XXX.techo.no.          IN      A       10.128.10.2 ;
+ns1.zone-XXX.techo.no.          IN      A       10.128.10.2 ; Your server
 ```
-ns1.zone-XXX.techo.no. is your nameserver, so the server you are working on.
+- ns1.zone-XXX.techo.no. is the nameserver, so the server you are working on.
+- `1 ; Serial` is the zone serial and is used to detect if the zone is changed. Increment this number by one when changes are done.
 
-## 3.7 Extra tasks (optinal)
+
+## 3.7 Extra tasks (optional)
 1. Try to create a reverse zone for the assigned subnet. (in-addr.arpa)
 2. Make DHCP automaticly create DNS records for it's clients. (Dynamic DNS)
 3. Feel free to create more zones.
 
 # TODO notes
-- editor (nano guide)
 - tcpdump
 - dhcp authoritative option
 - recursor and authoritative on the same IP/server: why not.

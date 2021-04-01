@@ -51,7 +51,7 @@ def check_dns_auth_soa(server, entry, skip=False):
         "shortname": "dns_auth",
         "name": "DNS Authoritative",
         "description": "Check if SOA for {} exists".format(entry["zone"]),
-        "sequence": 31,
+        "sequence": 21,
         "status_success": status,
         "status_description": "LGTM!" if status else "Skipped" if skip else "Timeout?"
      }
