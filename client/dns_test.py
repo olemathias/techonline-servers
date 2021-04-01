@@ -26,7 +26,7 @@ def check_dns_rec(server, entry, skip=False):
         test1 = make_dns_request("a", server, random.choice(domains))
         test2 = make_dns_request("a", server, random.choice(domains))
 
-        if test1 or test2 is not False:
+        if test1 is False or test2 is not False:
             if len(test1) >= 1 or len(test2) >= 1:
                 status = True
                 status_description = "LGTM!"
@@ -58,7 +58,10 @@ def check_dns_rec_outside(server, entry, skip=False):
         test1 = make_dns_request("a", server, random.choice(domains))
         test2 = make_dns_request("a", server, random.choice(domains))
 
-        if test1 or test2 is False:
+        if test1 is False and test2 is False:
+            status = True
+            status_description = "LGTM!"
+        elif len(test1) == 0 and len(test2) == 0:
             status = True
             status_description = "LGTM!"
         else:
@@ -164,6 +167,39 @@ def check_dns_auth_ns_a(server, entry, skip=False):
         "name": "DNS Authoritative NS",
         "description": "Check if A record for NS exists",
         "sequence": 23,
+        "status_success": status,
+        "status_description": status_description
+     }
+
+# Check SOA outside
+def check_dns_auth_outside(server, entry, skip=False):
+    status = False
+    if skip is False:
+        q = make_dns_request("soa", server, entry["zone"])
+        if q is not False:
+            if len(q) >= 1 and len(q[0]) >= 1:
+                x = q[0][0]
+                if x.serial is not None and x.rname is not None and x.mname is not None:
+                    if str(x.mname) == "ns1."+entry["zone"]+".":
+                        status = True
+                        status_description = "LGTM!"
+                    else:
+                        status_description = "Nameserver in SOA is {}, excepted {}".format(str(x.mname), "ns1."+entry["zone"]+".")
+                else:
+                    status_description = "SOA invalid?"
+            else:
+                status_description = "SOA not found?"
+        else:
+            status_description = "Timeout?"
+    else:
+        status_description = "Skipped"
+
+    return {
+        "task_shortname": "dns_auth",
+        "shortname": "dns_auth_outside",
+        "name": "DNS Authoritative Outside",
+        "description": "Check {} responds from outside local subnet".format(entry["zone"]),
+        "sequence": 24,
         "status_success": status,
         "status_description": status_description
      }

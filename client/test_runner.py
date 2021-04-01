@@ -90,6 +90,7 @@ for station in stations:
 
         if "mgmt_ipv4" in entry:
             status.append(make_full_test(check_dns_rec_outside(entry["mgmt_ipv4"], entry, skip),entry))
+            status.append(make_full_test(check_dns_auth_outside(entry["mgmt_ipv4"], entry, skip),entry))
 
         status.append(make_full_test(check_dns_auth_soa(server, entry, skip),entry))
         status.append(make_full_test(check_dns_auth_ns(server, entry, skip),entry))
