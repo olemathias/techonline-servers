@@ -87,7 +87,13 @@ for station in stations:
             server = dhcp_info["options"]["DNSServer"]["value"][0]
 
         status.append(make_full_test(check_dns_rec(server, entry, skip),entry))
+
+        if "mgmt_ipv4" in entry:
+            status.append(make_full_test(check_dns_rec_outside(entry["mgmt_ipv4"], entry, skip),entry))
+
         status.append(make_full_test(check_dns_auth_soa(server, entry, skip),entry))
+        status.append(make_full_test(check_dns_auth_ns(server, entry, skip),entry))
+        status.append(make_full_test(check_dns_auth_ns_a(server, entry, skip),entry))
 
     except Exception as e:
         print(e)

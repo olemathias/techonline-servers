@@ -36,7 +36,7 @@ For convenience, the following is set up:
 
 
 ## 2.8 IP-plan
-All instances will automaticly be allocated an /24 IPv4 network for the task. See the `ens19` interface for what subnet you got. IPv6 is not needed for this task.
+All instances will automaticly be allocated an /24 IPv4 network for the task. See the `ens19` interface for what subnet you got. IPv6 is not needed for this task.  
 
 IPv4: For management the server is placed in 10.129.1.0/24 and all traffic to and from the server is NAT'ed behind 185.80.182.120. Only SSH traffic on allocated port is allowed in.
 IPv6: You will get a public IPv6 address.  
@@ -46,14 +46,15 @@ Filtering: We do filtering on traffic to prevent abuse, let us know if you think
 ## 3.1 DHCP
 There are many DHCP servers out there, the most known are probably isc-dhcp-server. For this task we recommend isc-dhcp-server, but you can choose whatevery you like. The rest of the documentation will assume you are using isc-dhcp-server.  
 
-The server can be installed using apt-get on Debian.  
+The server can be installed using apt-get on Debian. It's normal for startup to fail after installation.
 `apt install isc-dhcp-server`
 
 A few notes:
 - The default setup from Debian have the same service for DHCPv4 and DHCPv6, since we are only going to use IPv4 in this lab, it can save you some headache by disabling DHCPv6. Do that by commenting out `INTERFACESv6` (add # to front of the line) in `/etc/default/isc-dhcp-server`.
 - While you are in `/etc/default/isc-dhcp-server` add ens19 to `INTERFACESv4`. This tells the server to only listen to ens19.
-- The default configuration (/etc/dhcp/dhcpd.conf) have everything you need to complete the task, you will just need to put it together. Read the examples
-- The log /var/log/syslog is a good start when something is not working.
+- The default configuration (/etc/dhcp/dhcpd.conf) have everything you need to complete the task, you will just need to put it together. Read the examples.
+- Test the config with `dhcpd -t -cf /etc/dhcp/dhcpd.conf`
+- `journalctl -b -t dhcpd -t isc-dhcp-server` is a good start when something is not working.
 
 Options you will need:
 - domain-name (use the one provided)
@@ -62,7 +63,7 @@ Options you will need:
 - max-lease-time
 - authoritative
 - subnet
-  - routers
+  - routers (use the first ip in the network (.1) )
 
 You are free to configure other options if you would like.
 
@@ -77,6 +78,16 @@ The authoritative nameserver contains information specific to the domain name it
 
 See more at https://www.cloudflare.com/learning/dns/dns-server-types/
 
+## Common types of DNS record
+- A record - The record that holds a IPv4 address.
+- AAAA record - The record that holds a IPv6 address.
+- CNAME record - Forwards one domain or subdomain to another domain
+- NS record - Stores the name server for a DNS entry.
+- SOA record - Stores admin information about a domain.
+- PTR record - Provides a domain name in reverse-lookups.
+
+See more at https://www.cloudflare.com/learning/dns/dns-records/
+
 ## 3.3 DNS software
 As with DHCP, there are multiple options avaliable. The most popular in the latter decades is BIND.
 
@@ -86,7 +97,7 @@ Bind9 can be installed using apt-get on Debian.
 `apt install bind9`
 
 ## 3.4 Bind
-- The config files for bind can be found in /etc/bind/
+- The config files for bind can be found in `/etc/bind/`
 - To show the current status of bind: `systemctl status bind9`
 - After making changes to the config you will need to restart bind9
 - You can validate the config with `named-checkconf /etc/bind/named.conf`
@@ -98,7 +109,7 @@ Bind9 can be installed using apt-get on Debian.
 - Enable recursion
 
 ### ACL
-The ACL should be placed outside of `options {`  
+The ACL should be placed before `options {`  
 ```
 acl my_net {
     10.0.0.0/24;
@@ -106,7 +117,7 @@ acl my_net {
 ```
 
 ### Enable recursion
-After you have defined the acl, allow recursion under `options`  
+After you have defined the acl, allow recursion in `options`  
 ```
 recursion yes;
 allow-recursion { my_net; };
@@ -145,7 +156,7 @@ $TTL    300
 
 ; name servers - A records
 ns1.zone-XXX.techo.no.          IN      A       10.128.10.2 ; Your server
-```
+```  
 - ns1.zone-XXX.techo.no. is the nameserver, so the server you are working on.
 - `1 ; Serial` is the zone serial and is used to detect if the zone is changed. Increment this number by one when changes are done.
 
@@ -154,11 +165,10 @@ ns1.zone-XXX.techo.no.          IN      A       10.128.10.2 ; Your server
 1. Try to create a reverse zone for the assigned subnet. (in-addr.arpa)
 2. Make DHCP automaticly create DNS records for it's clients. (Dynamic DNS)
 3. Feel free to create more zones.
+4. Use tcpdump to see the traffic from the client
 
 # TODO notes
-- tcpdump
 - dhcp authoritative option
-- recursor and authoritative on the same IP/server: why not.
 - Write about the DHCP Options (default-lease-time, max-lease-time)
 - The diffrent DNS records (A, AAAA, CNAME, NS, SOA, MX, ++)
 - @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @

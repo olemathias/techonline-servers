@@ -50,6 +50,7 @@ class Entry(models.Model):
             "zone": self.zone_fqdn[:-1],
             "vlan_id": self.vlan_id,
             "vlan_ip": "10.{}.{}.0/24".format(str(self.vlan_id)[:2], str(self.vlan_id)[-2:]),
+            "mgmt_ipv4": self.vm['config']['net']['ipv4']['ip'],
             "created_at": self.created,
             "updated_at": self.updated
         }
