@@ -1,9 +1,8 @@
 from django.db import models
 from django.conf import settings
 from task.orc import Orc
-from task.vyos import Vyos
+# from task.vyos import Vyos
 from task.pdns import PowerDNS
-from dnsdist_console import Console
 
 import string
 import random
@@ -59,11 +58,11 @@ class Entry(models.Model):
         orc = Orc()
         orc.delete_vm(self.orc_vm_id)
 
-        vyos = Vyos()
-        allocations = Allocation.objects.filter(entry_id=self.id)
-        for a in allocations:
-            if vyos.delete_nat_rule(a.vyos_rule_id):
-                a.delete()
+        # vyos = Vyos()
+        # allocations = Allocation.objects.filter(entry_id=self.id)
+        # for a in allocations:
+        #     if vyos.delete_nat_rule(a.vyos_rule_id):
+        #         a.delete()
 
         rrsets = []
         if self.fqdn is not None:
@@ -127,12 +126,12 @@ class Entry(models.Model):
         entry = Entry.objects.create(username=uid, entry_type=entry_type)
         entry.orc_vm_username = username
         entry.orc_vm_password = password
-        entry.public_ipv4 = settings.PUBLIC_IPV4
+        # entry.public_ipv4 = settings.PUBLIC_IPV4
         entry.save()
 
-        ssh_vyos_rule_id = Allocation.get_next_vyos_rule_id()
-        ssh_allocation = Allocation(entry_id=entry.id, vyos_rule_id=ssh_vyos_rule_id, port=ssh_port, type="ssh")
-        ssh_allocation.save()
+        # ssh_vyos_rule_id = Allocation.get_next_vyos_rule_id()
+        # ssh_allocation = Allocation(entry_id=entry.id, vyos_rule_id=ssh_vyos_rule_id, port=ssh_port, type="ssh")
+        # ssh_allocation.save()
 
         entry.fqdn = "vm-{}.{}.".format(vm_name, settings.BASE_DOMAIN)
         rrsets = []
@@ -159,18 +158,19 @@ class Entry(models.Model):
         vm = orc.create_vm(vm_name, username, password, ssh_port, vlan_id)
         entry.orc_vm_id = vm['id']
         entry.orc_vm_fqdn = vm['fqdn']
+        entry.public_ipv4 = vm['config']['net']['ipv4']['ip']
         entry.public_ipv6 = vm['config']['net']['ipv6']['ip']
         entry.save()
 
-        ssh_destination = {
-            "address": entry.public_ipv4,
-            "port": ssh_port
-        }
-        ssh_translation = {
-            "address": vm['config']['net']['ipv4']['ip'],
-            "port": ssh_port
-        }
-        ssh_allocation.vyos.create_nat_rule(ssh_vyos_rule_id, ssh_destination, ssh_translation, "Techo - VM: {}".format(vm['id']))
+        # ssh_destination = {
+        #     "address": entry.public_ipv4,
+        #     "port": ssh_port
+        # }
+        # ssh_translation = {
+        #     "address": vm['config']['net']['ipv4']['ip'],
+        #     "port": ssh_port
+        # }
+        # ssh_allocation.vyos.create_nat_rule(ssh_vyos_rule_id, ssh_destination, ssh_translation, "Techo - VM: {}".format(vm['id']))
 
         rrsets.append({
             "name": entry.fqdn,
@@ -235,27 +235,27 @@ class Allocation(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    vyos_obj = None
+    # vyos_obj = None
 
-    @property
-    def vyos(self):
-        if self.vyos_obj is None:
-            self.vyos_obj = Vyos()
-        return self.vyos_obj
+    # @property
+    # def vyos(self):
+    #     if self.vyos_obj is None:
+    #         self.vyos_obj = Vyos()
+    #     return self.vyos_obj
 
-    @classmethod
-    def get_next_vyos_rule_id(self):
-        allocations = Allocation.objects.all().values_list('vyos_rule_id', flat=True)
-        for i in list(range(1100, 1200)):
-            if i not in allocations:
-                return i
+    # @classmethod
+    # def get_next_vyos_rule_id(self):
+    #     allocations = Allocation.objects.all().values_list('vyos_rule_id', flat=True)
+    #     for i in list(range(1100, 1200)):
+    #         if i not in allocations:
+    #             return i
 
-    @classmethod
-    def get_next_port(self):
-        ports = Allocation.objects.all().values_list('port', flat=True)
-        for i in list(range(20001, 20200)):
-            if i not in ports:
-                return i
+    # @classmethod
+    # def get_next_port(self):
+    #     ports = Allocation.objects.all().values_list('port', flat=True)
+    #     for i in list(range(20001, 20200)):
+    #         if i not in ports:
+    #             return i
 
 class Status(models.Model):
     entry = models.ForeignKey(Entry, on_delete=models.CASCADE)

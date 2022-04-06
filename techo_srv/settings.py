@@ -147,10 +147,10 @@ ORC_VM_MEMORY = int(os.environ.get('ORC_VM_MEMORY', 4))
 ORC_VM_CORES = int(os.environ.get('ORC_VM_CORES', 2))
 ORC_VM_DISK = int(os.environ.get('ORC_VM_DISK', 16))
 
-VYOS_BASE_URL = os.environ.get('VYOS_BASE_URL', 'https://fra1.msbone.net:44302/')
-VYOS_TOKEN = os.environ.get('VYOS_TOKEN', 'LOL')
+# VYOS_BASE_URL = os.environ.get('VYOS_BASE_URL', 'https://fra1.msbone.net:44302/')
+# VYOS_TOKEN = os.environ.get('VYOS_TOKEN', 'LOL')
 
-PUBLIC_IPV4 = os.environ.get('PUBLIC_IPV4', '212.129.2.43')
+# PUBLIC_IPV4 = os.environ.get('PUBLIC_IPV4', '212.129.2.43')
 BASE_DOMAIN = os.environ.get('BASE_DOMAIN', 'techo.msbone.cloud')
 
 PDNS_API_URL = os.environ.get('PDNS_API_URL', 'http://10.10.144.2:8081/api/v1')
